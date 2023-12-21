@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/spigot-1.17.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/askyblock.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/BentoBox-1.23.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/EssentialsX-2.19.7.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/Factions (1).jar"/>
+	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/IridiumSkyblock-4.0.8.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/MVdWPlaceholderAPI.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/mysql-connector-java-8.0.29-tidb-1.0.2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/PlaceholderAPI-2.11.3.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/worldguard-bukkit-7.0.8-beta-01-dist.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/worldedit-bukkit-7.3.0-beta-03-dist.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/Vault.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/SuperiorSkyblock2-2023.3.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
