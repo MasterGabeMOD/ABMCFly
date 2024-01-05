@@ -11,7 +11,6 @@
 	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/BentoBox-1.23.1.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/EssentialsX-2.19.7.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/Factions (1).jar"/>
-	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/IridiumSkyblock-4.0.8.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/MVdWPlaceholderAPI.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/mysql-connector-java-8.0.29-tidb-1.0.2.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/PlaceholderAPI-2.11.3.jar"/>
@@ -19,5 +18,6 @@
 	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/worldedit-bukkit-7.3.0-beta-03-dist.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/Vault.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/SuperiorSkyblock2-2023.3.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Gabe/Documents/dependencies/IridiumSkyblock-2.6.5.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

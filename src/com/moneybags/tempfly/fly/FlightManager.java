@@ -61,12 +61,9 @@ public class FlightManager implements Listener, Reloadable {
 
 		providers.add(this.environment = new FlightEnvironment(this));
 		providers.add(this.combat = new CombatHandler(this));
-		//try { providers.add(this.structures = new StructureProximity(this)); } catch (Exception e) {
-		//	e.printStackTrace();
-		//}
 
 		tempfly.getServer().getPluginManager().registerEvents(this, tempfly);
-	}// /tf give 1m
+	}
 
 	public TempFly getTempFly() {
 		return tempfly;
@@ -80,11 +77,7 @@ public class FlightManager implements Listener, Reloadable {
 		return combat;
 	}
 	
-	/**
-	public StructureProximity getStructureProximity() {
-		return this.structures;
-	}
-	*/
+
 
 	@Override
 	public void onTempflyReload() {
@@ -102,11 +95,6 @@ public class FlightManager implements Listener, Reloadable {
 
 	}
 
-	/**
-	 * 
-	 * --=------------=-- User Control --=------------=--
-	 * 
-	 */
 
 	private final Map<UUID, FlightUser> users = new HashMap<>();
 	private final Map<UUID, UserLoader> loaders = new HashMap<>();
@@ -143,11 +131,7 @@ public class FlightManager implements Listener, Reloadable {
 		return users.values().toArray(new FlightUser[users.size()]);
 	}
 
-	/**
-	 * Should be called asyncrounously
-	 * 
-	 * @param u
-	 */
+
 	public synchronized void addUser(UUID u, boolean async) {
 		Console.debug("------Add User UUID------");
 		if (!users.containsKey(u) && !loaders.containsKey(u)) {
@@ -190,9 +174,7 @@ public class FlightManager implements Listener, Reloadable {
 			FlightUser user = loader.buildUser();
 			users.put(u, user);
 			Bukkit.getScheduler().runTask(tempfly, () -> {
-				// TODO change the order in which this occurs to prevent any indiscrepencies in
-				// the requirementproviders if the time gets changed by time manager on user
-				// join.
+
 				for (RequirementProvider provider : providers) {
 					provider.onUserInitialized(user);
 				}
@@ -215,33 +197,14 @@ public class FlightManager implements Listener, Reloadable {
 		}
 	}
 
-	/**
-	 * Called on plugin disable, saves users and cleans up.
-	 */
+
 	public void onDisable() {
 		for (FlightUser user : getUsers()) {
 			removeUser(user.getPlayer(), true);
 		}
 	}
 
-	/**
-	 * 
-	 * --=------------=-- Requirements --=------------=--
-	 * 
-	 * The flight inquiry methods in the FlightManager will process the requirements
-	 * from every RequirementProvider available. All of the hooks, the environment
-	 * tracker for disabled regions etc...
-	 * 
-	 * --=------------=--
-	 */
 
-	/**
-	 * Register a new requirement provider with tempfly. All users will
-	 * automatically be updated with the new requirements.
-	 * 
-	 * @param provider
-	 *            The new requirements
-	 */
 	public void registerRequirementProvider(RequirementProvider provider) {
 		if (providers.contains(provider)) {
 			throw new IllegalArgumentException("A requirement provider can only be registered once!");
@@ -252,13 +215,7 @@ public class FlightManager implements Listener, Reloadable {
 		}
 	}
 
-	/**
-	 * unregister an existing requirement provider in tempfly. All users will
-	 * automatically be updated and the requirements removed.
-	 * 
-	 * @param provider
-	 *            The new requirements
-	 */
+
 	public void unregisterRequirementProvider(RequirementProvider provider) {
 		if (providers.remove(provider)) {
 			for (FlightUser user : getUsers()) {
@@ -269,14 +226,7 @@ public class FlightManager implements Listener, Reloadable {
 		}
 	}
 
-	/**
-	 * Check if a player can fly in a set of given regions.
-	 * 
-	 * @param user
-	 * @param regions
-	 * @param invokeHooks
-	 * @return
-	 */
+
 	public List<FlightResult> inquireFlight(FlightUser user, CompatRegion[] regions) {
 		List<FlightResult> results = new ArrayList<>();
 		for (RequirementProvider requirement : providers) {
@@ -288,14 +238,7 @@ public class FlightManager implements Listener, Reloadable {
 		return results;
 	}
 
-	/**
-	 * Check if a player can fly in a single region.
-	 * 
-	 * @param user
-	 * @param r
-	 * @param invokeHooks
-	 * @return
-	 */
+
 	public List<FlightResult> inquireFlight(FlightUser user, CompatRegion region) {
 		List<FlightResult> results = new ArrayList<>();
 		for (RequirementProvider requirement : providers) {
@@ -307,14 +250,7 @@ public class FlightManager implements Listener, Reloadable {
 		return results;
 	}
 
-	/**
-	 * Check if a player can fly in a world.
-	 * 
-	 * @param user
-	 * @param world
-	 * @param invokeHooks
-	 * @return
-	 */
+
 	public List<FlightResult> inquireFlight(FlightUser user, World world) {
 		List<FlightResult> results = new ArrayList<>();
 		for (RequirementProvider requirement : providers) {
@@ -326,16 +262,7 @@ public class FlightManager implements Listener, Reloadable {
 		return results;
 	}
 
-	/**
-	 * Check if a player can fly at a given location and process all requirements
-	 * for said location. Does not check regions and worlds, you need to use the
-	 * specified methods for regions and worlds.
-	 * 
-	 * @param user
-	 * @param loc
-	 * @param invokeHooks
-	 * @return
-	 */
+
 	public List<FlightResult> inquireFlight(FlightUser user, Location loc) {
 		List<FlightResult> results = new ArrayList<>();
 		for (RequirementProvider requirement : providers) {
@@ -355,35 +282,7 @@ public class FlightManager implements Listener, Reloadable {
 		return results;
 	}
 
-	/**
-	 * 
-	 * --=--------------=-- Event Handling --=--------------=--
-	 * 
-	 * General event handling for users.
-	 * 
-	 * Provides location tracking for users and handles flight inquiries based on
-	 * location.
-	 * 
-	 * --=--------------=--
-	 * 
-	 */
 
-	/**
-	 * Method to tie in with the EventHandlers. Responsible for all location
-	 * tracking in the plugin. Takes in a player and their new location. Proceeds to
-	 * process the information for all RequirementProviders and handles flight
-	 * restrictions.
-	 * 
-	 * This method will probably be the bulk of tempfly's resource usage, it looks
-	 * like its doing alot but realistically it wont do much unless some server goes
-	 * way overboard with stacking up features from the config. like adding hundreds
-	 * of ReletiveTimeRegions and having multiple hooks enabled.
-	 * 
-	 * @param p
-	 *            The player to process
-	 * @param to
-	 *            The new location
-	 */
 	public void updateLocation(FlightUser user, Location from, Location to, boolean forceWorld, boolean forceRegion) {
 		if (V.bugInfiniteA) {
 			if (user.getPlayer().isFlying()
@@ -419,26 +318,19 @@ public class FlightManager implements Listener, Reloadable {
 			}
 		}
 
-		// Check flight requirements if player entered a new world.
-		// Process world
 		if (!from.getWorld().equals(to.getWorld()) || forceWorld) {
 			results.addAll((inquireFlight(user, to.getWorld())));
 			user.getEnvironment().asessRtWorld();
 			user.getEnvironment().asessInfiniteFlight();
 		}
-		// Check flight requirements at player location. Doesn't really do anything if
-		// no hooks are enabled.
-		// Used mainly for things like islands in skyblock, faction land, etc...
-		// Process location
+
 		results.addAll(inquireFlight(user, user.getPlayer().getLocation()));
 
-		// Submit the flight results and see if auto fly can be enabled.
+
 		user.submitFlightResults(results, user.hasFlightEnabled());
 	}
 
-	/**
-	 * Evaluate flight requirements on teleport
-	 */
+
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onTeleport(PlayerTeleportEvent e) {
 		Console.debug("------on teleport------", "--|> " + e.getPlayer().getUniqueId());
@@ -456,9 +348,7 @@ public class FlightManager implements Listener, Reloadable {
 		user.applyFlightCorrect();
 	}
 
-	/**
-	 * Evaluate flight requirements on respawn
-	 */
+
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onRespawn(PlayerRespawnEvent e) {
 		if (!hasUser(e.getPlayer())) {
@@ -470,8 +360,7 @@ public class FlightManager implements Listener, Reloadable {
 		}
 		user.resetIdleTimer();
 		updateLocation(user, e.getPlayer().getLocation(), e.getRespawnLocation(), false, false);
-		// If the user has flight enabled, we need to correct their speed so it doesnt
-		// reset to 1.
+
 		if (user.hasFlightEnabled()) {
 			user.applyFlightCorrect();
 			user.applySpeedCorrect(false, 1);
@@ -480,7 +369,7 @@ public class FlightManager implements Listener, Reloadable {
 	}
 
 	/**
-	 * Evaluate flight requirements on changing worlds.
+
 	 */
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onChangedWorld(PlayerChangedWorldEvent e) {
@@ -492,28 +381,17 @@ public class FlightManager implements Listener, Reloadable {
 			return;
 		}
 		user.resetIdleTimer();
-		// The from coordinate really doesn't matter here, just the world.
+
 		updateLocation(user, new Location(e.getFrom(), 0, 0, 0), user.getPlayer().getLocation(), true, false);
-		// If the user has flight enabled, we need to correct their speed so it doesnt
-		// reset to 1.
+
 		if (user.hasFlightEnabled()) {
 			user.applyFlightCorrect();
 			user.applySpeedCorrect(true, 10);
 
 		}
-		// TODO flight cannot just be enforced on every world change as it will break
-		// essentials fly compatibility. Must be enforced
-		// when something happens to actually disable the flight, impossible to check if
-		// it should be disabled here...
-
-		// else if (!user.hasFlightEnabled() && user.getPlayer().getAllowFlight()){
-		// user.enforce(1);
-		// }
 	}
 
-	/**
-	 * Fix the players flight when they change gamemodes.
-	 */
+
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onChangedGamemode(PlayerGameModeChangeEvent e) {
 		if (!hasUser(e.getPlayer())) {
@@ -532,11 +410,7 @@ public class FlightManager implements Listener, Reloadable {
 		}
 	}
 
-	/**
-	 * Handles removal of damage protection.
-	 * 
-	 * @param e
-	 */
+
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onEntityDamage(EntityDamageEvent e) {
 		Entity vic = e.getEntity();
@@ -555,28 +429,12 @@ public class FlightManager implements Listener, Reloadable {
 		user.removeDamageProtection();
 	}
 
-	/**
-	 * I will listen to player join on lowest priority so that i can initialize the
-	 * flight user before other plugins try to access it on higher priorities.
-	 */
+
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
 	public void onJoin(PlayerJoinEvent e) {
 		Console.debug("------------ On PlayerjOIN event ------------");
 		addUser(e.getPlayer());
 	}
-
-	/**
-	 * @EventHandler (priority = EventPriority.LOWEST, ignoreCancelled = false)
-	 *               public void onSpawn(PlayerSpawnLocationEvent e) {
-	 *               e.setSpawnLocation(new Location(e.getPlayer().getWorld(), 100,
-	 *               200, 100)); Console.debug("------------ On PlayerSpawn event
-	 *               ------------"); Console.debug("--------------->>>>>>>>> " +
-	 *               String.valueOf(Bukkit.getPlayer(e.getPlayer().getUniqueId())));
-	 *               //e.getPlayer().teleport(new Location(e.getPlayer().getWorld(),
-	 *               100, 200, 100)); e.getPlayer().setGameMode(GameMode.SPECTATOR);
-	 * 
-	 *               }
-	 */
 
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onAsyncPreLogin(AsyncPlayerPreLoginEvent e) {

@@ -1,6 +1,6 @@
 name: ABMCFly
 main: com.moneybags.tempfly.TempFly
-softdepend: [Factions, ASkyBlock, Essentials, MVdWPlaceholderAPI, PlaceholderAPI, aSkyBlock, Vault, WorldGuard, WorldEdit, BentoBox, SuperiorSkyblock2]
+softdepend: [Factions, ASkyBlock, Essentials, MVdWPlaceholderAPI, PlaceholderAPI, aSkyBlock, Vault, WorldGuard, WorldEdit, IridiumSkyblock, BentoBox, SuperiorSkyblock2]
 api-version: 1.20
 version: 3.1.8
 commands:
