@@ -10,6 +10,8 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Particle.DustOptions;
+import org.bukkit.scheduler.BukkitRunnable;
+
 import com.moneybags.tempfly.TempFly;
 import com.moneybags.tempfly.user.FlightUser;
 import com.moneybags.tempfly.util.Console;
@@ -36,6 +38,15 @@ public class Particles {
     }
 
     private static Random rand = new Random();
+
+    public static void playAsync(final Location loc, final String s) {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                play(loc, s);
+            }
+        }.runTaskAsynchronously(tempfly);
+    }
 
     public static void play(Location loc, String s) {
         if (!oldParticles) {
