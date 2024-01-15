@@ -175,34 +175,40 @@ public class FlightUser {
 	}
 	
 	public void setTime(double time) {
-		if (time <= 0) {
-			time = 0;
-		}
-		double oldTime = this.time;
-		this.time = time;
-		manager.getTempFly().getDataBridge().stageChange(DataPointer.of(DataValue.PLAYER_TIME, p.getUniqueId().toString()), time);
-		if ((timer instanceof FlightTimer) 
-				&& !hasInfiniteFlight()
-				&& p.isFlying()) {
-			if (V.actionBar) {doActionBar();}
-		}
-		if (time > 0 && (hasAutoFlyQueued()) && !enabled) {
-			enableFlight();
-		} else if (time == 0) {
-			disableFlight(0, !V.damageTime);
-			autoEnable = true;
-			if (timer != null) {
-				timer.cancel();
-			}
-		} else if (oldTime == 0 && time > 0 && !enabled && V.autoFlyTimeReceived) {
-			enableFlight();
-		} else if (V.permaTimer) {
-			if (timer != null) {
-				timer.cancel();
-			}
-			timer = new FlightTimer();
-		}
+	    if (time <= 0) {
+	        time = 0;
+	    }
+	    double oldTime = this.time;
+	    this.time = time;
+
+	    boolean hasInfinite = hasInfiniteFlight();
+
+	    manager.getTempFly().getDataBridge().stageChange(DataPointer.of(DataValue.PLAYER_TIME, p.getUniqueId().toString()), time);
+
+	    if ((timer instanceof FlightTimer) && !hasInfinite && p.isFlying()) {
+	        if (V.actionBar) {
+	            doActionBar();
+	        }
+	    }
+
+	    if (time > 0 && hasAutoFlyQueued() && !enabled) {
+	        enableFlight();
+	    } else if (time == 0) {
+	        disableFlight(0, !V.damageTime);
+	        autoEnable = true;
+	        if (timer != null) {
+	            timer.cancel();
+	        }
+	    } else if (oldTime == 0 && time > 0 && !enabled && V.autoFlyTimeReceived) {
+	        enableFlight();
+	    } else if (V.permaTimer) {
+	        if (timer != null) {
+	            timer.cancel();
+	        }
+	        timer = new FlightTimer();
+	    }
 	}
+
 	
 	public void resetIdleTimer() {
 		this.idle = -1;
