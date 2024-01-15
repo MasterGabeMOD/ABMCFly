@@ -44,7 +44,6 @@ public class FlightUser {
 	private final Player p;
 	private final UserEnvironment environment;
 	
-	//A list of reasons the player cannot currently fly.
 	private Map<RequirementProvider, Map<InquiryType, FlightResult>> requirements = new ConcurrentHashMap<>();
 	
 	private BukkitTask
@@ -95,44 +94,55 @@ public class FlightUser {
 	}
 	
 	private class InitialTask implements Runnable {
-		
-		boolean
-		logged,
-		compatLogged;
-		
-		public InitialTask(boolean logged, boolean compatLogged) {
-			this.logged = logged;
-			this.compatLogged = compatLogged;
-		}
-		
-		@Override
-		public void run() {
-			if (logged && (hasInfiniteFlight() || time > 0) && V.autoFly) {
-				Console.debug("--| Player is flight logged");
-				if (!enableFlight()) {
-					sendRequirementMessage();
-					enforce(1);
-				} else {
-					applySpeedCorrect(true, 0);
-				}
-				
-				
-			} else if (!compatLogged) {
-				// Compat flight log is when the player logs out while flying but not with tempfly.
-				// We want to save this value so tempfly doesnt break other plugins flight features.
-				Console.debug("--| Player is not compat flight logged");
-				enforce(1);
-				if (V.permaTimer && time > 0) {
-					if (timer != null) {
-						timer.cancel();
-					}
-					timer = new FlightTimer();
-				}
-			}
-			manager.getTempFly().getDataBridge().stageChange(DataPointer.of(DataValue.PLAYER_FLIGHT_LOG, p.getUniqueId().toString()), false);
-			manager.getTempFly().getDataBridge().stageChange(DataPointer.of(DataValue.PLAYER_COMPAT_FLIGHT_LOG, p.getUniqueId().toString()), false);
-		}
-		
+
+	    private final boolean logged;
+	    private final boolean compatLogged;
+
+	    public InitialTask(boolean logged, boolean compatLogged) {
+	        this.logged = logged;
+	        this.compatLogged = compatLogged;
+	    }
+
+	    @Override
+	    public void run() {
+	        if (logged && (hasInfiniteFlight() || time > 0) && V.autoFly) {
+	            handleFlightLogged();
+	        } else if (!compatLogged) {
+	            handleCompatFlightNotLogged();
+	        }
+
+	        updateFlightLogStatus();
+	    }
+
+	    private void handleFlightLogged() {
+	        Console.debug("--| Player is flight logged");
+	        if (!enableFlight()) {
+	            sendRequirementMessage();
+	            enforce(1);
+	        } else {
+	            applySpeedCorrect(true, 0);
+	        }
+	    }
+
+	    private void handleCompatFlightNotLogged() {
+	        Console.debug("--| Player is not compat flight logged");
+	        enforce(1);
+	        if (V.permaTimer && time > 0) {
+	            resetAndCreateTimer();
+	        }
+	    }
+
+	    private void resetAndCreateTimer() {
+	        if (timer != null) {
+	            timer.cancel();
+	        }
+	        timer = new FlightTimer();
+	    }
+
+	    private void updateFlightLogStatus() {
+	        manager.getTempFly().getDataBridge().stageChange(DataPointer.of(DataValue.PLAYER_FLIGHT_LOG, p.getUniqueId().toString()), false);
+	        manager.getTempFly().getDataBridge().stageChange(DataPointer.of(DataValue.PLAYER_COMPAT_FLIGHT_LOG, p.getUniqueId().toString()), false);
+	    }
 	}
 	
 	public void save() {
@@ -222,17 +232,12 @@ public class FlightUser {
 		return environment;
 	}
 	
-	/**
-	 * @return true if the user has infinite flight and it is enabled.
-	 */
+
 	public boolean hasInfiniteFlight() {
 		return (p.hasPermission("tempfly.infinite") && infinite) || environment.hasInfiniteFlight();
 	}
 	
-	/**
-	 * Set whether the user has infinite flight enabled. This has no effect if they do not have the permission tempfly.infinite
-	 * @param enable enable infinite flight?
-	 */
+
 	public void setInfiniteFlight(boolean enable) {
 		manager.getTempFly().getDataBridge().stageChange(DataPointer.of(DataValue.PLAYER_INFINITE, p.getUniqueId().toString()), enable);
 		this.infinite = enable;
@@ -246,17 +251,10 @@ public class FlightUser {
 		}
 	} 
 	
-	/**
-	 * @return true if the user has requirement bypass and it is enabled.
-	 */
 	public boolean hasRequirementBypass() {
 		return p.hasPermission("tempfly.bypass") && bypass;
 	}
-	
-	/**
-	 * Set whether the user has requirement bypass enabled. This has no effect if they do not have the permission tempfly.bypass
-	 * @param enable enable requirement bypass?
-	 */
+
 	public void setRequirementBypass(boolean enable) {
 		manager.getTempFly().getDataBridge().stageChange(DataPointer.of(DataValue.PLAYER_BYPASS, p.getUniqueId().toString()), enable);
 		this.bypass = enable;
@@ -270,20 +268,7 @@ public class FlightUser {
 		}
 	}
 	
-	
-	/**
-	 * 
-	 * --=--------------=--
-	 *    Flight Control
-	 * --=--------------=--
-	 * 
-	 */
-	
-	
-	
-	/**
-	 * Internal clean up method called when the player quits or server is reloading.
-	 */
+
 	public void onQuit(boolean reload) {
 		if (enabled || hasAutoFlyQueued()) {
 			manager.getTempFly().getDataBridge().stageChange(DataPointer.of(DataValue.PLAYER_FLIGHT_LOG, p.getUniqueId().toString()), true);
@@ -299,13 +284,7 @@ public class FlightUser {
 		if (timer != null) {timer.cancel();}
 		removeDamageProtection();
 	}
-	
-	/**
-	 * This is a safety method to make sure a players flight is disabled.
-	 * This will only try to remove flight if the user has flight mode disabled but are flying anyway.
-	 * 
-	 * @param delay The delay in ticks to enforce removal of flight. 1 should suffice.
-	 */
+
 	public void enforce(int delay) {
 		Console.debug("enforcing disabled flight");
 		if (enforceTask != null) {
@@ -314,19 +293,11 @@ public class FlightUser {
 		enforceTask = Bukkit.getScheduler().runTaskLater(manager.getTempFly(), new EnforceTask(), delay);
 	}
 	
-	/**
-	 * TODO
-	 * if players take fall damage when flight is lost and they are not supposed to
-	 * there is an infinite flight bug somewhere to track down because the enforcement task is
-	 * removing the flight after is was supposed to be disabled without adding the proper damage protec1tion. 
-	 * @author Kevin
-	 *
-	 */
+
 	public class EnforceTask implements Runnable {
 
 		@Override
 		public void run() {
-			// If the users flight is enabled again when the task runs we will return.
 			if (enabled) return;
 			GameMode m = p.getGameMode();
 			if (m == GameMode.CREATIVE && V.creativeTimer) {
@@ -343,10 +314,7 @@ public class FlightUser {
 		
 	}
 	
-	/**
-	 * Turn off players flight with a safety delay that will enforce proper removal of flight.
-	 * @param delay The delay in ticks to enforce removal of flight. 1 should suffice. -1 for no enforcement
-	 */
+
 	public void disableFlight(int delay, boolean fallSafely) {
 		Console.debug("------ disable flight -------");
 		if (!enabled) {return;}
@@ -359,7 +327,6 @@ public class FlightUser {
 		GameMode m = p.getGameMode();
 		updateList(true);
 		updateName(true);
-		// Fixes a weird bug where fall damage accumulates through flight and damages even when 1 block off the ground.
 		if (p.isFlying()) {p.setFallDistance(0);}
 		if (m == GameMode.CREATIVE && V.creativeTimer) {
 			Console.debug("--> set flying false 1");
@@ -374,10 +341,7 @@ public class FlightUser {
 		if (delay > -1) {enforce(delay);}
 	}
 	
-	/**
-	 * Enable the users flight
-	 * @return false if the users flight can not be enabled due to flight requirements.
-	 */
+
 	@SuppressWarnings("deprecation")
 	public boolean enableFlight() {
 		Console.debug("------ enable flight -------");
@@ -400,9 +364,7 @@ public class FlightUser {
 		return true;
 	}
 	
-	/**
-	 * Method to make sure a player can fly when they are supposed to.
-	 */
+
 	public void applyFlightCorrect() {
 		Console.debug("------ apply flight correct -------");
 		Bukkit.getScheduler().runTaskLater(manager.getTempFly(), () -> {
@@ -412,15 +374,6 @@ public class FlightUser {
 			}
 		}, 1);
 	}
-	
-	/**
-	 * 
-	 * --=-----------=--
-	 *    Requirement
-	 * --=-----------=--
-	 * 
-	 */
-	
 	
 	
 	public RequirementProvider[] getFlightRequirements() {
@@ -453,12 +406,7 @@ public class FlightUser {
 		}
 	}
 	
-	/**
-	 * 
-	 * @param requirement
-	 * @param type
-	 * @return true if there are no more requirements
-	 */
+
 	public boolean removeFlightRequirement(RequirementProvider requirement, InquiryType type) {
 		if (V.debug) {Console.debug("", "---- Removing flight requirement from user ----", "--| Requirement: " + requirement.getClass().toGenericString(), "--| Requirements: " + requirements);}
 		Map<InquiryType, FlightResult> types = requirements.getOrDefault(requirement, new HashMap<>());
@@ -471,12 +419,7 @@ public class FlightUser {
 		return !hasFlightRequirements();
 	}
 	
-	/**
-	 * 
-	 * @param requirement
-	 * @param type
-	 * @return true if there are no more requirements
-	 */
+
 	public boolean removeFlightRequirement(RequirementProvider requirement) {
 		if (V.debug) {Console.debug("", "---- Removing flight requirement from user ----", "--| Requirement: " + requirement.getClass().toGenericString(), "--| Requirements: " + requirements);}
 		this.requirements.remove(requirement);
@@ -501,15 +444,7 @@ public class FlightUser {
 		return null;
 	}
 	
-	/**
-	 * Quality of life method.
-	 * Evaluate the overall flight status of the user, checks all flight requirements present on the server.
-	 * Used mainly when a player first joins or for some reason is not being tracked and we need to re-check everything.
-	 * Flight will be disabled if a requirement fails.
-	 * The requirement will then be submitted to the user for the auto flight enable feature.
-	 * 
-	 * @return false if the user fails.
-	 */
+
 	public boolean evaluateFlightRequirements(Location loc, boolean failMessage) {
 		List<FlightResult> results = new ArrayList<>();
 		results.addAll(manager.inquireFlight(this, loc.getWorld()));
@@ -528,15 +463,7 @@ public class FlightUser {
 		return true;
 	}
 	
-	/**
-	 * Evaluate the flight status of the user for the requirements introduced by the provider.
-	 * Flight will be disabled if a requirement fails.
-	 * The requirement will then be submitted to the user for the auto flight enable feature.
-	 *
-	 * @param failMessage Do you want the fail message to be sent to the user if they cannot fly? 
-	 * @return false if the user fails.
-	 */
-	
+
 	public boolean evaluateFlightRequirement(RequirementProvider requirement, Location loc) {
 		List<FlightResult> results = new ArrayList<>();
 		if (!requirement.handles(InquiryType.WORLD)) {
@@ -552,12 +479,6 @@ public class FlightUser {
 		return submitFlightResults(results, hasFlightEnabled()) && hasFlightRequirement(requirement);
 	}
 	
-	
-	/**
-	 * Submit a batch of flight results to the FlightUser.
-	 * @param results The results to submit
-	 * @return false if the results disabled the users flight aka user failed.
-	 */
 	public boolean submitFlightResult(FlightResult result) {
 		RequirementProvider provider = result.getRequirement();
 		InquiryType type = result.getInquiryType();
@@ -577,16 +498,10 @@ public class FlightUser {
 		}
 		return true;
 	}
-	
-	/**
-	 * Submit a batch of flight results.
-	 * @param results
-	 * @return
-	 */
+
 	public boolean submitFlightResults(List<FlightResult> results, boolean failMessage) {
-		// The result that actually disabled the flight. first come first serve.
+
 		FlightResult disabled = null;
-		// The final result that enabled the flight.
 		FlightResult enable = null;
 		
 		for (FlightResult result: results) {
@@ -618,11 +533,7 @@ public class FlightUser {
 		}
 		return true;
 	}
-	
-	/**
-	 * Update the flight requirements for the user. Automatically auto enables flight if applicable. 
-	 * @return True if there are no more requirements.
-	 */
+
 	public boolean updateRequirements(String enableMessage) {
 		Console.debug("", "--- updating requirements ---", "--| requirements: " + requirements.toString(),
 				"--| flight enabled: " + enabled, "--| auto flight: " + autoEnable, "--| time: " + time);
@@ -642,18 +553,7 @@ public class FlightUser {
 		}
 		return requirements.size() == 0;
 	}
-	
-	
-	
-	/**
-	 * 
-	 * --=-----------=--
-	 *    Fall Damage
-	 * --=-----------=--
-	 * 
-	 */
-	
-	
+
 	public void addDamageProtection() {
 		removeDamageProtection();
 		damageProtection = Bukkit.getScheduler().runTaskLater(manager.getTempFly(), () -> {
@@ -671,32 +571,11 @@ public class FlightUser {
 	public boolean hasDamageProtection() {
 		return damageProtection != null;
 	}
-	
-	
-	
-	/**
-	 * 
-	 * --=----------=--
-	 *    Aesthetics
-	 * --=----------=--
-	 * 
-	 */
-	
-	
-	
-	/**
-	 * This method returns a string to keep the plugin compatible through versions.
-	 * @return The enum string representation of the particle
-	 */
+
 	public String getTrail() {
 		return particle;
 	}
 	
-	/**
-	 *  This method requires a string to keep the plugin compatible through versions.
-	 *  The enum value of the particle as a string
-	 * @param particle
-	 */
 	public void setTrail(String particle) {
 		this.particle = particle;
 		manager.getTempFly().getDataBridge().stageChange(DataPointer.of(DataValue.PLAYER_TRAIL, p.getUniqueId().toString()), particle);
@@ -753,15 +632,6 @@ public class FlightUser {
 		ActionBarAPI.sendActionBar(p, timeManager.regexString(V.actionText, getTime()));
 	}
 	
-	
-	/**
-	 * 
-	 * --=-----------=--
-	 *   Speed control
-	 * --=-----------=--
-	 * 
-	 */
-	
 	public double getSpeedPreference() {
 		return selectedSpeed;
 	}
@@ -775,10 +645,6 @@ public class FlightUser {
 		return selectedSpeed > -1 && manager.getFlightEnvironment().allowSpeedPreference();
 	}
 	
-	/**
-	 * Correct the users flight speed. Takes into account permissions and max world / region speeds.
-	 * @return The resulting speed of the user.
-	 */
 	public float applySpeedCorrect(boolean message, int delay) {
 		float maxSpeed = getMaxSpeed();
 		Console.debug("--| Max speed: " + String.valueOf(maxSpeed));
@@ -826,7 +692,6 @@ public class FlightUser {
 		CompatRegion[] regions = environment.getCurrentRegionSet();
 		FlightEnvironment env = manager.getFlightEnvironment();
 		
-		// Permissions for region speed take priority
 		float finSpeed = getMaxSpeed(regions);
 		if (finSpeed != -999) {
 			Console.debug("2: " + finSpeed);
@@ -836,7 +701,6 @@ public class FlightUser {
 			return env.getMaxSpeed(regions);
 		}
 		
-		// Permissions for world speed go next
 		finSpeed = getMaxSpeed(p.getWorld());
 		if (finSpeed != -999) {
 			Console.debug("3: " + finSpeed);
@@ -899,16 +763,6 @@ public class FlightUser {
 		return maxBase;
 	}
 	
-	
-	/**
-	 * 
-	 * --=---------=--
-	 *     Timers
-	 * --=---------=--
-	 * 
-	 */
-	
-	
 	public boolean hasTimer() {
 		return this.timer != null;
 	}
@@ -916,94 +770,81 @@ public class FlightUser {
 	public abstract class TempFlyTimer extends BukkitRunnable {
 		
 	}
-	
-	/**
-	 * Ground timer runs every tick when FlightTimer isnt scheduled and simply checks if the player is flying.
-	 * This way the FlightTimer will run as soon as the player starts flying. Otherwise it kinda looks laggy.
-	 * @author Kevin
-	 *
-	 */
-	public class GroundTimer extends TempFlyTimer {
-		
-		private static final int DELAY = 3;
-		
-		public GroundTimer() {
-			Console.debug("--- new ground timer ---");
-			this.runTaskTimer(manager.getTempFly(), 1, DELAY);
-		}
-		
-		@SuppressWarnings("deprecation")
-		@Override
-		public void run() {
-			idle += DELAY;
-			if (p.isFlying() || V.permaTimer || (V.groundTimer && p.isOnGround())) {
-				if (!V.idleTimer && isIdle()) {
-					return;
-				}
-				if (p.getGameMode() == GameMode.CREATIVE && !V.creativeTimer) {
-					return;
-				}
-				if (p.getGameMode() == GameMode.SPECTATOR && !V.spectatorTimer) {
-					return;
-				}
-				if (p.getVehicle() != null) {
-					return;
-				}
-				this.cancel();
-				timer = new FlightTimer();
-			}
-		}
-		
-	}
-	
-	/**
-	 * FlightTimer runs every 20 ticks and is in charge of decrementing time among other things such as
-	 * action bar messages.
-	 * @author Kevin
-	 *
-	 */
 
-	// It looks like were having spaghetti for dinner
+	public class GroundTimer extends TempFlyTimer {
+
+	    private static final int DELAY = 3;
+
+	    public GroundTimer() {
+	        initializeTimer();
+	    }
+
+	    @Override
+	    public void run() {
+	        idle += DELAY;
+	        if (shouldSwitchToFlightTimer()) {
+	            switchToFlightTimer();
+	        }
+	    }
+
+	    private void initializeTimer() {
+	        Console.debug("--- new ground timer ---");
+	        this.runTaskTimer(manager.getTempFly(), 1, DELAY);
+	    }
+
+	    private boolean shouldSwitchToFlightTimer() {
+	        // Consolidate conditions for better readability
+	        return p.isFlying() || V.permaTimer || (V.groundTimer && p.isOnGround()) || !shouldContinueTimer();
+	    }
+
+	    private boolean shouldContinueTimer() {
+	        return V.idleTimer || p.getGameMode() != GameMode.CREATIVE || V.creativeTimer || p.getGameMode() != GameMode.SPECTATOR || V.spectatorTimer || p.getVehicle() == null;
+	    }
+
+	    private void switchToFlightTimer() {
+	        this.cancel();
+	        timer = new FlightTimer();
+	    }
+	}
+
 	public class FlightTimer extends TempFlyTimer {
-		
-		private static final int DELAY = 3;
-		
-		private boolean previouslyFlying;
-		
-		public FlightTimer() {
-			Console.debug("--- new flight timer--- ");
-			this.runTaskTimer(manager.getTempFly(), 0, DELAY);
-			if (doFlightTimer() && V.actionBar && !hasInfiniteFlight() && time > 0) {
-				doActionBar();
-			}
-		}
-		
-		@Override
-		public void run() {
-			idle += DELAY;
-			// Update the players identifiers each tick as it isn't resource heavy it looks good.
-			doIdentifier();
-			// This line fixed an unknown confliction with another plugin on some guys server so i'l just leave it.
-			//if (enabled) {p.setAllowFlight(true);}
-			
-			if (hasInfiniteFlight()) {
-				return;
-			}
-			
-			if (!doFlightTimer()) {
-				this.cancel();
-				timer = time > 0 ? new GroundTimer() : null;
-				return;
-			}
-			
-			accumulativeCycle += DELAY * 50;
-			if (accumulativeCycle >= 1000) {
-				accumulativeCycle = 0;
-				executeTimer();
-				return;
-			}
-			
-		}
+
+	    private static final int DELAY = 3;
+	    private boolean previouslyFlying;
+
+	    public FlightTimer() {
+	        initializeTimer();
+	    }
+
+	    @Override
+	    public void run() {
+	        idle += DELAY;
+	        doIdentifier();
+
+	        if (hasInfiniteFlight()) {
+	            return;
+	        }
+
+	        if (!doFlightTimer()) {
+	            this.cancel();
+	            timer = time > 0 ? new GroundTimer() : null;
+	            return;
+	        }
+
+	        accumulativeCycle += DELAY * 50;
+	        if (accumulativeCycle >= 1000) {
+	            accumulativeCycle = 0;
+	            executeTimer();
+	        }
+	    }
+
+	    private void initializeTimer() {
+	        Console.debug("--- new flight timer--- ");
+	        this.runTaskTimer(manager.getTempFly(), 0, DELAY);
+	        if (doFlightTimer() && V.actionBar && !hasInfiniteFlight() && time > 0) {
+	            doActionBar();
+	        }
+	    }
 		
 		@Override
 		public void cancel() {
@@ -1078,10 +919,6 @@ public class FlightUser {
 			previouslyFlying = p.isFlying();
 		}
 		
-		/**
-		 * 
-		 * @return True if the timer should continue, false if it can switch to ground timer.
-		 */
 		private boolean messaged = false;
 		
 		private boolean doIdleCheck() {
