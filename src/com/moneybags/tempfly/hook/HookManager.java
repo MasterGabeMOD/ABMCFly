@@ -66,14 +66,7 @@ public class HookManager implements Reloadable {
 		hooks.put(hook.getGenre(), loaded);
 	}
 	
-	
-	
-	/**
-	 *
-	 * Initialization
-	 * 
-	 */
-	
+
 	private void loadRegionProvider() {
 		RegionProvider hook;
 		for (Class<?> clazz: REGIONS) {
@@ -87,10 +80,7 @@ public class HookManager implements Reloadable {
 		}
 	}
 	
-	/**
-	 * Manually set tempfly's region provider.
-	 * @param provider The regbion provider
-	 */
+
 	public void setRegionProvider(RegionProvider provider) {
 		this.regions = provider;
 	}
@@ -148,12 +138,7 @@ public class HookManager implements Reloadable {
 		Console.debug("--------Loading Genre Hooks End--------", "");
 	}
 	
-	/**
-	 *
-	 * Getters
-	 * 
-	 */
-	
+
     public Economy getEconomy() {
     	return eco;
     }
@@ -201,12 +186,7 @@ public class HookManager implements Reloadable {
 		return enabled.toArray(new TempFlyHook[enabled.size()]);
 	}
 	
-	
-	
-	
-	/*
-	 * Represents the GameMode type of a hook  
-	 */
+
 	public static enum Genre {
 		SKYBLOCK("SkyBlock", SuperiorHook.class),
 		LANDS("Lands"),
@@ -224,12 +204,7 @@ public class HookManager implements Reloadable {
 		public String getDirectory() {
 			return "hooks" + File.separator + folder;
 		}
-		
-		/**
-		 * 
-		 * @return An array of built in TempFly classes that represent this genre. You can still add your own that
-		 * aren't on this list, i just use it internally for ease of access.
-		 */
+
 		public Class<?>[] getInternalClasses() {
 			return classes;
 		}
